@@ -17,7 +17,7 @@ type Memcached struct {
 // Generate will generate a Memcached sample Java operator
 func (m *Memcached) Generate(cli *cli.CLI, testdir string) error {
 	// setup the testdata directory
-	dir := filepath.Join(testdir, "quarkus-memcached-operator")
+	dir := filepath.Join(testdir, "quarkus", "quarkus-memcached-operator")
 	err := prepareSample(dir)
 	if err != nil {
 		log.Fatalf("encountered an error preparing the sample directory `%s`: %w", dir, err)
