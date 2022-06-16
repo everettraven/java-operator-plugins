@@ -8,5 +8,5 @@ test:
 .PHONY: test lint
 
 .PHONY: generate
-generate:
+generate: # generate the testdata samples
 	go run ./hack/generate/samples/generate.go
