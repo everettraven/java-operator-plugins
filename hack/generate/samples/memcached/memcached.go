@@ -57,15 +57,17 @@ func (m *Memcached) Generate(cli *cli.CLI, testdir string) error {
 		return fmt.Errorf("encountered an error implementing reconcile function: %w", err)
 	}
 
-	// err = implementSpec(dir)
-	// if err != nil {
-	// 	return fmt.Errorf("encountered an error implementing spec: %w", err)
-	// }
+	log.Print("implementing spec")
+	err = implementSpec(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error implementing spec: %w", err)
+	}
 
-	// err = implementStatus(dir)
-	// if err != nil {
-	// 	return fmt.Errorf("encountered an error implementing status: %w", err)
-	// }
+	log.Print("implementing status")
+	err = implementStatus(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error implementing status: %w", err)
+	}
 
 	// -------------------
 	return nil
@@ -183,6 +185,7 @@ func generateApi(cli *cli.CLI, dir string) error {
 	return nil
 }
 
+// implementReconcileHelpers inserts the reconciler helper function code to the MemcachedReconciler.java file
 func implementReconcileHelpers(dir string) error {
 	target := "// TODO Fill in the rest of the reconciler"
 
@@ -238,10 +241,10 @@ func implementReconcileHelpers(dir string) error {
 	`
 
 	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
-
 	return err
 }
 
+// implementReconcile implements the reconcile function in the MemcachedReconciler.java file
 func implementReconcile(dir string) error {
 	target := "// TODO: fill in logic"
 	code := `
@@ -285,5 +288,47 @@ func implementReconcile(dir string) error {
 
 	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
 
+	return err
+}
+
+// implementSpec populates the MemcachedSpec.java file with the `size` field
+func implementSpec(dir string) error {
+	target := "// Add Spec information here"
+	code := `
+	// Size is the size of the memcached deployment
+    private Integer size;
+
+    public Integer getSize() {
+        return size;
+    }
+
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+	`
+
+	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedSpec.java"), target, code)
+	return err
+}
+
+// implementStatus populates the MemcachedStatus.java file with the proper status fields
+func implementStatus(dir string) error {
+	target := "// Add Status information here"
+	code := `
+	// Nodes are the names of the memcached pods
+    private List<String> nodes;
+
+    public List<String> getNodes() {
+        if (nodes == null) {
+            nodes = new ArrayList<>();
+        }
+        return nodes;
+    }
+
+    public void setNodes(List<String> nodes) {
+        this.nodes = nodes;
+    }
+	`
+	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedStatus.java"), target, code)
 	return err
 }
