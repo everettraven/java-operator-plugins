@@ -8,12 +8,9 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	kbutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	kbtestutils "sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
-type Memcached struct {
-	kbtestutils.TestContext
-}
+type Memcached struct{}
 
 // Generate will generate a Memcached sample Java operator
 func (m *Memcached) Generate(cli *cli.CLI, testdir string) error {
