@@ -28,5 +28,9 @@ func main() {
 	}
 
 	memcached := &memcached.Memcached{}
-	memcached.Generate(c, testdir)
+	err = memcached.Generate(c, testdir)
+
+	if err != nil {
+		log.Fatal("encountered an error generating the memcached sample:", err)
+	}
 }

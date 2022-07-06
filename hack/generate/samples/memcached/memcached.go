@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
@@ -67,6 +68,16 @@ func (m *Memcached) Generate(cli *cli.CLI, testdir string) error {
 	}
 
 	// -------------------
+
+	// Post implementation
+	// -------------------
+	log.Printf("Running post implementation steps")
+	err = postImplementation(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error running the post implementation steps: %w", err)
+	}
+	// -------------------
+
 	return nil
 }
 
@@ -328,4 +339,40 @@ func implementStatus(dir string) error {
 	`
 	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedStatus.java"), target, code)
 	return err
+}
+
+func postImplementation(dir string) error {
+	log.Printf("Changing directory to: %s", dir)
+	// change execution directory
+	oldDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("encountered an error getting current working directory: %w", err)
+	}
+
+	err = os.Chdir(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error changing directory to `%s`: %w", dir, err)
+	}
+
+	// change execution directory back after function exits
+	defer func() {
+		err := os.Chdir(oldDir)
+		if err != nil {
+			fmt.Printf("encountered an error changing directory back to the previous working directory, this may cause problems: %w", err)
+		}
+	}()
+
+	log.Printf("Running `mvn clean install`")
+	out, err := exec.Command("mvn", "clean", "install", "-X").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("encountered an error running `mvn clean install`: %w | `mvn clean install` output: %s", err, out)
+	}
+
+	log.Printf("Running `make bundle`")
+	out, err = exec.Command("make", "bundle").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("encountered an error running `make bundle`: %w | `make bundle` output: %s", err, out)
+	}
+
+	return nil
 }
