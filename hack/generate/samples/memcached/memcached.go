@@ -67,6 +67,24 @@ func (m *Memcached) Generate(cli *cli.CLI, testdir string) error {
 		return fmt.Errorf("encountered an error implementing status: %w", err)
 	}
 
+	log.Print("adding reconcile dependencies")
+	err = populateReconcileDependencies(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error adding reconcile dependencies: %w", err)
+	}
+
+	log.Print("adding status dependencies")
+	err = populateStatusDependencies(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error adding status dependencies: %w", err)
+	}
+
+	log.Print("adding pom dependencies")
+	err = populatePomDependencies(dir)
+	if err != nil {
+		return fmt.Errorf("encountered an error adding pom dependencies: %w", err)
+	}
+
 	// -------------------
 
 	// Post implementation
@@ -248,8 +266,7 @@ func implementReconcileHelpers(dir string) error {
 	}
 	`
 
-	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
-	return err
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
 }
 
 // implementReconcile implements the reconcile function in the MemcachedReconciler.java file
@@ -294,9 +311,7 @@ func implementReconcile(dir string) error {
 			return UpdateControl.updateResource(resource);
 		}`
 
-	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
-
-	return err
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
 }
 
 // implementSpec populates the MemcachedSpec.java file with the `size` field
@@ -315,8 +330,7 @@ func implementSpec(dir string) error {
     }
 	`
 
-	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedSpec.java"), target, code)
-	return err
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedSpec.java"), target, code)
 }
 
 // implementStatus populates the MemcachedStatus.java file with the proper status fields
@@ -337,8 +351,58 @@ func implementStatus(dir string) error {
         this.nodes = nodes;
     }
 	`
-	err := kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedStatus.java"), target, code)
-	return err
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedStatus.java"), target, code)
+}
+
+func populateReconcileDependencies(dir string) error {
+	target := `import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;`
+	code := `
+
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
+import org.apache.commons.collections.CollectionUtils;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+`
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedReconciler.java"), target, code)
+
+}
+
+func populateStatusDependencies(dir string) error {
+	target := `package com.example;`
+	code := `
+
+import java.util.ArrayList;
+import java.util.List;
+`
+	return kbutil.InsertCode(filepath.Join(dir, "src", "main", "java", "com", "example", "MemcachedStatus.java"), target, code)
+}
+
+func populatePomDependencies(dir string) error {
+	target := `    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+      <version>${quarkus.version}</version>
+    </dependency>`
+	code := `
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.2.2</version>
+    </dependency>
+`
+	return kbutil.InsertCode(filepath.Join(dir, "pom.xml"), target, code)
 }
 
 func postImplementation(dir string) error {
